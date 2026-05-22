@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "hash.h"
 #include "auth.h"
 
@@ -19,6 +20,19 @@ static void read_line(const char *prompt, char *buf, size_t size)
     buf[strcspn(buf, "\r\n")] = '\0';
 }
 
+/* Detect whitespace */
+static int contains_whitespace(const char *str)
+{
+    while (*str) {
+        if (isspace((unsigned char)*str)) {
+            return 1;
+        }
+        str++;
+    }
+
+    return 0;
+}
+
 /* Hash a string */
 static void mode_hash_explorer(void)
 {
@@ -30,6 +44,12 @@ static void mode_hash_explorer(void)
     printf("╚══════════════════════════╝\n");
 
     read_line("Enter string to hash: ", input, sizeof(input));
+
+    /* Reject whitespace */
+    if (contains_whitespace(input)) {
+        printf("\n[ERROR] Whitespace characters are not allowed.\n");
+        return;
+    }
 
     /* Show ASCII values */
     printf("\n[ASCII Breakdown]\n");
@@ -78,6 +98,14 @@ static void mode_avalanche(void)
     read_line("Enter string 1: ", a, sizeof(a));
     read_line("Enter string 2: ", b, sizeof(b));
 
+    /* Reject whitespace */
+    if (contains_whitespace(a) ||
+        contains_whitespace(b)) {
+
+        printf("\n[ERROR] Whitespace characters are not allowed.\n");
+        return;
+    }
+
     hash_string(a, ha);
     hash_string(b, hb);
 
@@ -116,16 +144,18 @@ static void mode_register(void)
     read_line("Username: ", username, sizeof(username));
     read_line("Password: ", password, sizeof(password));
 
-    /* Show stored hash */
-    hash_string(password, hex);
-
-    printf("\n  Stored password hash:\n");
-    printf("  %s\n\n", hex);
-
     int result = auth_register(username, password);
 
     switch (result) {
+
         case 0:
+
+            /* Show stored hash */
+            hash_string(password, hex);
+
+            printf("\n  Stored password hash:\n");
+            printf("  %s\n\n", hex);
+
             printf("  ✓ User '%s' registered!\n\n", username);
             break;
 
@@ -135,6 +165,10 @@ static void mode_register(void)
 
         case -2:
             printf("  ✗ File error.\n\n");
+            break;
+
+        case -3:
+            printf("  ✗ Whitespace characters are not allowed.\n\n");
             break;
     }
 }
@@ -155,6 +189,7 @@ static void mode_login(void)
     int result = auth_login(username, password);
 
     switch (result) {
+
         case 1:
             printf("\n  ✓ Login successful! Welcome, %s.\n\n",
                    username);
@@ -170,6 +205,10 @@ static void mode_login(void)
 
         case -2:
             printf("\n  ✗ File error.\n\n");
+            break;
+
+        case -3:
+            printf("\n  ✗ Whitespace characters are not allowed.\n\n");
             break;
     }
 }

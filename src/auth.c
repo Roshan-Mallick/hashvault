@@ -2,6 +2,7 @@
 #include "hash.h"
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 /* Compare strings safely */
 static int safe_strcmp(const char *a, const char *b)
@@ -21,6 +22,19 @@ static int safe_strcmp(const char *a, const char *b)
     }
 
     return diff;
+}
+
+/* Detect whitespace characters */
+static int contains_whitespace(const char *str)
+{
+    while (*str) {
+        if (isspace((unsigned char)*str)) {
+            return 1;
+        }
+        str++;
+    }
+
+    return 0;
 }
 
 /* Check if username already exists */
@@ -62,6 +76,12 @@ int auth_user_exists(const char *username)
 /* Register new user */
 int auth_register(const char *username, const char *password)
 {
+    /* Reject whitespace */
+    if (contains_whitespace(username) ||
+        contains_whitespace(password)) {
+        return -3;
+    }
+
     /* Prevent duplicate usernames */
     if (auth_user_exists(username)) {
         return -1;
@@ -86,6 +106,12 @@ int auth_register(const char *username, const char *password)
 /* Login user */
 int auth_login(const char *username, const char *password)
 {
+    /* Reject whitespace */
+    if (contains_whitespace(username) ||
+        contains_whitespace(password)) {
+        return -3;
+    }
+
     /* Hash entered password */
     char input_hash[HASH_HEX_LEN];
     hash_string(password, input_hash);
